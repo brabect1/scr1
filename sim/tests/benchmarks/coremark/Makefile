@@ -57,10 +57,10 @@ $(bld_dir)/coremark.elf: $(ld_script) $(c_objs) $(asm_objs)
 	$(RISCV_GCC) -o $@ -T $^ $(LDFLAGS)
 
 $(bld_dir)/coremark.hex: $(bld_dir)/coremark.elf
-	$(RISCV_OBJCOPY) $^ $@
+	$(RISCV_OBJCOPY) -O verilog $^ $@
 
 $(bld_dir)/coremark.dump: $(bld_dir)/coremark.elf
-	$(RISCV_OBJDUMP) $^ > $@
+	$(RISCV_OBJDUMP) -d $^ > $@
 
 clean:
 	$(RM) $(c_objs) $(asm_objs) $(bld_dir)/coremark.hex $(bld_dir)/coremark.dump 

@@ -35,8 +35,6 @@ override ARCH=$(ARCH_tmp)
 
 $(info ARCH_tmp=$(ARCH_tmp))
 
-export TARGETS :=
-
 export ABI   ?= ilp32
 # Testbench memory delay patterns\
   (FFFFFFFF - no delay, 00000000 - random delay, 00000001 - max delay)
@@ -53,6 +51,7 @@ export root_dir := $(shell pwd)
 export tst_dir  := $(root_dir)/sim/tests
 export inc_dir  := $(tst_dir)/common
 export bld_dir  := $(root_dir)/build
+export tmp_dir  := $(root_dir)/temp
 
 test_results := $(bld_dir)/test_results.txt
 test_info    := $(bld_dir)/test_info
@@ -74,6 +73,7 @@ export rtl_tb_files  := ahb_tb.files
 export top_module    := scr1_top_tb_ahb
 endif
 #--
+ifndef TARGETS
 ifeq (,$(findstring e,$(ARCH_lowercase)))
 ifeq (,$(findstring 0,$(IPIC)))
 # comment this target if you don't want to run the vectored_isr_sample
@@ -91,6 +91,9 @@ endif
 TARGETS += coremark
 # comment this target if you don't want to run the dhrystone
 TARGETS += dhrystone21
+endif
+
+export TARGETS
 
 
 # Targets
@@ -98,9 +101,18 @@ TARGETS += dhrystone21
 
 default: run_verilator
 
+.PHONY: populate-coremark
+populate-coremark:
+	mkdir -p $(tmp_dir) && \
+        cd $(tmp_dir) && \
+        git clone https://github.com/eembc/coremark
+	test $(tst_dir)/benchmarks/coremark && \
+        mkdir -p $(tst_dir)/benchmarks/coremark/src && \
+        $(foreach f,core_main.c core_list_join.c coremark.h core_matrix.c core_state.c core_util.c,cp $(tmp_dir)/coremark/$(f) $(tst_dir)/benchmarks/coremark/src/;)
+
 tests: $(TARGETS)
 
-$(test_info): clean_hex tests
+$(test_info): $(tests:%=$(bld_dir)/%.hex)
 	cd $(bld_dir); \
 	ls -tr *.hex > $@
 
