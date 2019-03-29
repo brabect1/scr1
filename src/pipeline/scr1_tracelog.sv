@@ -223,7 +223,7 @@ end
 
 always_ff @(negedge rst_n, posedge clk) begin
     if (~rst_n) begin
-        if (trace_fhandler) begin
+        if (trace_fhandler != 0) begin
             $fflush(trace_fhandler);
             $fclose(trace_fhandler);
             trace_fhandler  = 0;
@@ -385,7 +385,7 @@ end
 
 always_ff @(negedge rst_n, posedge clk) begin
     if (~rst_n) begin
-        if (trace_csr_fhandler) begin
+        if (trace_csr_fhandler != 0) begin
             $fflush(trace_csr_fhandler);
             $fclose(trace_csr_fhandler);
             trace_csr_fhandler = 0;

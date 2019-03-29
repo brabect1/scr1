@@ -159,10 +159,10 @@ end
 always_comb begin
     case (lsu_cmd_r)
         SCR1_LSU_CMD_LW     : lsu2exu_l_data = dmem2lsu_rdata;
-        SCR1_LSU_CMD_LH     : lsu2exu_l_data = $signed  (dmem2lsu_rdata[15:0]);
-        SCR1_LSU_CMD_LHU    : lsu2exu_l_data = $unsigned(dmem2lsu_rdata[15:0]);
-        SCR1_LSU_CMD_LB     : lsu2exu_l_data = $signed  (dmem2lsu_rdata[7:0]);
-        SCR1_LSU_CMD_LBU    : lsu2exu_l_data = $unsigned(dmem2lsu_rdata[7:0]);
+        SCR1_LSU_CMD_LH     : lsu2exu_l_data = { {`SCR1_XLEN-16{dmem2lsu_rdata[15]}}, dmem2lsu_rdata[15:0]};
+        SCR1_LSU_CMD_LHU    : lsu2exu_l_data = { {`SCR1_XLEN-16{1'b0}},               dmem2lsu_rdata[15:0]};
+        SCR1_LSU_CMD_LB     : lsu2exu_l_data = { {`SCR1_XLEN- 8{dmem2lsu_rdata[ 7]}}, dmem2lsu_rdata[ 7:0]};
+        SCR1_LSU_CMD_LBU    : lsu2exu_l_data = { {`SCR1_XLEN- 8{1'b0}},               dmem2lsu_rdata[ 7:0]};
         default             : lsu2exu_l_data = '0;
     endcase // lsu_cmd_r
 end

@@ -162,7 +162,7 @@ assign q_empty          = (q_rptr == q_wptr);
 assign q_flush          = new_pc_req | stop_fetch;
 
 assign q_ocpd_h         = SCR1_IFU_Q_FREE_H_W'(q_wptr - q_rptr);
-assign q_free_h_next    = SCR1_IFU_Q_FREE_H_W'(SCR1_IFU_Q_SIZE_HALF - (q_wptr - q_rptr_next));
+assign q_free_h_next    = SCR1_IFU_Q_FREE_H_W'(SCR1_IFU_Q_SIZE_HALF) - (q_wptr - q_rptr_next);
 assign q_free_w_next    = SCR1_IFU_Q_FREE_W_W'(q_free_h_next >> 1'b1);
 
 assign q_head_rvi       = &(q_data_head[1:0]);
@@ -225,10 +225,10 @@ always_comb begin
     q_wptr_next = q_wptr;
 
     if ((q_we == SCR1_WE_RDATA_HI) | (q_we == SCR1_WE_RDATA_FULL)) begin
-        q_wptr_next = q_wptr + ((q_we == SCR1_WE_RDATA_FULL) ? 2'd2 : 1'b1);
+        q_wptr_next = q_wptr + ((q_we == SCR1_WE_RDATA_FULL) ? SCR1_IFU_QUEUE_PTR_W'(2) : SCR1_IFU_QUEUE_PTR_W'(1));
     end
     if ((q_re == SCR1_RE_WORD) | (q_re == SCR1_RE_HALFWORD)) begin
-        q_rptr_next = q_rptr + ((q_re == SCR1_RE_WORD) ? 2'd2 : 1'b1);
+        q_rptr_next = q_rptr + ((q_re == SCR1_RE_WORD) ? SCR1_IFU_QUEUE_PTR_W'(2) : SCR1_IFU_QUEUE_PTR_W'(1));
     end
 end
 
@@ -397,7 +397,7 @@ always_ff @(posedge clk, negedge rst_n) begin
     end
 end
 
-assign num_txns_pending_new = num_txns_pending + (imem_req & imem_req_ack) - (imem_resp_ok | imem_resp_er);
+assign num_txns_pending_new = num_txns_pending + {(SCR1_TXN_CNT_W-1)'(0),(imem_req & imem_req_ack)} - {(SCR1_TXN_CNT_W-1)'(0),(imem_resp_ok | imem_resp_er)};
 
 always_ff @(posedge clk, negedge rst_n) begin
     if (~rst_n) begin
@@ -410,7 +410,7 @@ end
 
 always_comb begin
     if (new_pc_req) begin
-        discard_resp_cnt_new = num_txns_pending_new - (imem_req & imem_req_ack);
+        discard_resp_cnt_new = num_txns_pending_new - {(SCR1_TXN_CNT_W-1)'(0), (imem_req & imem_req_ack)};
     end else if (imem_resp_er & ~discard_resp) begin
         discard_resp_cnt_new = num_txns_pending_new;
     end else begin
@@ -503,7 +503,7 @@ end
 always_comb begin
     case (instr_bypass)
         SCR1_BYPASS_RVC             : begin
-            ifu2idu_instr   = `SCR1_IMEM_DWIDTH'(new_pc_unaligned ? imem_rdata[31:16] : imem_rdata[15:0]);
+            ifu2idu_instr   = {(`SCR1_IMEM_DWIDTH-16)'(0), new_pc_unaligned ? imem_rdata[31:16] : imem_rdata[15:0]};
         end
         SCR1_BYPASS_RVI_RDATA       : begin
             ifu2idu_instr   = imem_rdata;
@@ -512,7 +512,7 @@ always_comb begin
             ifu2idu_instr   = {imem_rdata[15:0], q_data_head};
         end
         default                     : begin
-            ifu2idu_instr   = `SCR1_IMEM_DWIDTH'(q_head_rvc ? q_data_head : {q_data_next, q_data_head});
+            ifu2idu_instr   = (q_head_rvc ? {(`SCR1_IMEM_DWIDTH/2)'(0),q_data_head} : {q_data_next, q_data_head});
         end
     endcase // instr_bypass
 `ifdef SCR1_DBGC_EN

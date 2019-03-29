@@ -109,7 +109,7 @@ begin
 
     // Stage 4
     result.vd = |stage3_vd;
-    result.idx = (stage3_vd[0]) ? {1'b0, stage3_idx[0]} : {1'b1, stage3_idx[1]};
+    result.idx = (stage3_vd[0]) ? {(SCR1_IRQ_VECT_WIDTH-$size(stage3_idx[0]))'(0), stage3_idx[0]} : {(SCR1_IRQ_VECT_WIDTH-$size(stage3_idx[1]))'(1), stage3_idx[1]};
 
     return result;
 end
@@ -168,7 +168,7 @@ always_comb begin
 
             SCR1_IPIC_CISV : begin
                 // Vector number for currently serviced interrupt
-                for (int unsigned i=0; i<SCR1_IRQ_VECT_NUM; ++i) begin
+                for (bit[SCR1_IRQ_VECT_WIDTH-1:0] i=0; i<SCR1_IRQ_VECT_NUM; ++i) begin
                     if (cisv_m == i) begin
                         cisv_found |= 1'b1;
                         ipic2csr_rdata[SCR1_IRQ_VECT_WIDTH-1:0] |= cisv_m;
@@ -187,12 +187,12 @@ always_comb begin
 
             SCR1_IPIC_IPR : begin
                 // Aggregated pending interrupts
-                ipic2csr_rdata = ipr_m;
+                ipic2csr_rdata = {(`SCR1_XLEN-$size(ipr_m))'(0), ipr_m};
             end
 
             SCR1_IPIC_ISVR : begin
                 // Aggregated serviced interrupts
-                ipic2csr_rdata = isvr_m;
+                ipic2csr_rdata = {(`SCR1_XLEN-$size(isvr_m))'(0), isvr_m};
             end
 
             SCR1_IPIC_EOI,
@@ -202,7 +202,7 @@ always_comb begin
 
             SCR1_IPIC_IDX : begin
                 // Index register for access to interrupt CSRs
-                ipic2csr_rdata = idxr_m;
+                ipic2csr_rdata = {(`SCR1_XLEN-$size(idxr_m))'(0), idxr_m};
             end
 
             SCR1_IPIC_ICSR : begin
@@ -295,7 +295,7 @@ always_comb begin
                 // Start Of Interrupt
                 if (irr_priority_m.vd) begin
                     for (int unsigned i=0; i<SCR1_IRQ_VECT_NUM; ++i) begin
-                        if ($unsigned(irr_priority_m.idx) == i) begin
+                        if ($unsigned(irr_priority_m.idx) == i[$size(irr_priority_m.idx)-1:0]) begin
                             soi_wr_m   |= 1'b1;
                             ipr_clr[i] |= 1'b1;
                         end
@@ -404,7 +404,7 @@ assign isvr_priority_eoi_m = scr1_search_one_16(isvr_eoi_m);
 always_comb begin
     isvr_eoi_m = isvr_m;
     for (int unsigned i=0; i<SCR1_IRQ_VECT_NUM; ++i) begin
-        if (i == $unsigned(cisv_m)) begin
+        if (i[$size(cisv_m)-1:0] == $unsigned(cisv_m)) begin
             isvr_eoi_m[i] = 1'b0;
         end
     end
@@ -432,7 +432,7 @@ always_ff @(negedge rst_n, posedge clk) begin
     end else begin
         if ((irq_m_req) & (soi_wr_m)) begin
             for (int unsigned i=0; i<SCR1_IRQ_VECT_NUM; ++i) begin
-                if (i == $unsigned(irr_priority_m.idx)) begin
+                if (i[$size(irr_priority_m.idx)-1:0] == $unsigned(irr_priority_m.idx)) begin
                     isvr_m[i] <= 1'b1;
                 end
             end

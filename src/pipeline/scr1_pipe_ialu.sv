@@ -42,8 +42,8 @@ module scr1_pipe_ialu (
 localparam SCR1_MUL_WIDTH       = 1;
 localparam SCR1_MUL_INIT_CNT    = (`SCR1_XLEN/SCR1_MUL_WIDTH)-1;
  `endif // ~SCR1_FAST_MUL
-localparam SCR1_DIV_WIDTH       = 1;
-localparam SCR1_DIV_INIT_CNT    = (`SCR1_XLEN/SCR1_DIV_WIDTH)-1;
+localparam int SCR1_DIV_WIDTH       = 1;
+localparam int SCR1_DIV_INIT_CNT    = (`SCR1_XLEN/SCR1_DIV_WIDTH)-1;
 `endif // SCR1_RVM_EXT
 
 //-------------------------------------------------------------------------------
@@ -198,8 +198,8 @@ always_comb begin
                 SCR1_IALU_FSM_ITER : begin
                     sum1_sub    = 1'b1;
                     sum1_op1    = (curr_state == SCR1_IALU_FSM_IDLE)
-                                    ? ($signed(SCR1_DIV_INIT_CNT))
-                                    : ($signed({'0, cnt_res_reg}));
+                                    ? SCR1_DIV_INIT_CNT
+                                    : { {32-$size(cnt_res_reg){1'b0}}, cnt_res_reg};
                     sum1_op2    = 32'sb1;
                 end
                 SCR1_IALU_FSM_CORR : begin
@@ -248,8 +248,8 @@ assign cnt_res     = sum1_res[4:0];
 `ifdef SCR1_RVM_EXT
 always_comb begin
     sum2_sub    = 1'b0;
-    sum2_op1    = $signed(ialu_sum2_op1);
-    sum2_op2    = $signed(ialu_sum2_op2);
+    sum2_op1    = { {33-$size(ialu_sum2_op1){ialu_sum2_op1[$high(ialu_sum2_op1)]}}, ialu_sum2_op1};
+    sum2_op2    = { {33-$size(ialu_sum2_op2){ialu_sum2_op2[$high(ialu_sum2_op2)]}}, ialu_sum2_op2};
     case (mdu_cmd)
         SCR1_IALU_MDU_DIV : begin
             case (curr_state)
@@ -263,8 +263,8 @@ always_comb begin
                     inv         = (~div_cmd[0] & (ialu_op1[31] ^ ialu_op2[31]));
                     sum2_sub    = ~inv ^ sgn;
                     sum2_op1    = (curr_state == SCR1_IALU_FSM_IDLE)
-                                    ? $signed({(~div_cmd[0] & ialu_op1[31]), ialu_op1[31]})
-                                    : $signed({res32_1_reg[31:0], res32_3_reg[31]});
+                                    ? { {32{~div_cmd[0] & ialu_op1[31]}}, ialu_op1[31]}
+                                    : {res32_1_reg[31:0], res32_3_reg[31]};
                     sum2_op2    = $signed({(~div_cmd[0] & ialu_op2[31]), ialu_op2});
                 end
                 SCR1_IALU_FSM_CORR : begin
@@ -362,7 +362,7 @@ always_comb begin
                                     ? ({ialu_op1[30:0], 1'b0})
                                     : ({res32_3_reg[30:0], 1'b0});      // Low part of extended dividend (reminder)
                     res32_2     = (curr_state == SCR1_IALU_FSM_IDLE)
-                                    ? ({'0, quo})
+                                    ? ({31'd0, quo})
                                     : ({res32_2_reg[32-2:0], quo});     // Quotient
 
                 end
@@ -439,27 +439,27 @@ always_comb begin
             ialu_res    = sum1_res[`SCR1_XLEN-1:0];
         end
         SCR1_IALU_CMD_SUB_LT : begin
-            ialu_res    = `SCR1_XLEN'(sum1_flags.s ^ sum1_flags.o);
+            ialu_res    = {{`SCR1_XLEN-1{1'b0}}, (sum1_flags.s ^ sum1_flags.o)};
             ialu_cmp    = sum1_flags.s ^ sum1_flags.o;
         end
         SCR1_IALU_CMD_SUB_LTU : begin
-            ialu_res    = `SCR1_XLEN'(sum1_flags.c);
+            ialu_res    = {{`SCR1_XLEN-1{1'b0}}, sum1_flags.c};
             ialu_cmp    = sum1_flags.c;
         end
         SCR1_IALU_CMD_SUB_EQ : begin
-            ialu_res    = `SCR1_XLEN'(sum1_flags.z);
+            ialu_res    = {{`SCR1_XLEN-1{1'b0}}, sum1_flags.z};
             ialu_cmp    = sum1_flags.z;
         end
         SCR1_IALU_CMD_SUB_NE : begin
-            ialu_res    = `SCR1_XLEN'(~sum1_flags.z);
+            ialu_res    = {{`SCR1_XLEN-1{1'b0}}, ~sum1_flags.z};
             ialu_cmp    = ~sum1_flags.z;
         end
         SCR1_IALU_CMD_SUB_GE : begin
-            ialu_res    = `SCR1_XLEN'(~(sum1_flags.s ^ sum1_flags.o));
+            ialu_res    = {{`SCR1_XLEN-1{1'b0}}, ~(sum1_flags.s ^ sum1_flags.o)};
             ialu_cmp    = ~(sum1_flags.s ^ sum1_flags.o);
         end
         SCR1_IALU_CMD_SUB_GEU : begin
-            ialu_res    = `SCR1_XLEN'(~sum1_flags.c);
+            ialu_res    = {{`SCR1_XLEN-1{1'b0}}, ~sum1_flags.c};
             ialu_cmp    = ~sum1_flags.c;
         end
         SCR1_IALU_CMD_SLL,

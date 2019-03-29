@@ -401,7 +401,7 @@ always_comb begin
     if (exu_queue.csr_op == SCR1_CSR_OP_REG) begin
         exu2csr_w_data = mprf2exu_rs1_data;
     end else begin
-        exu2csr_w_data = {'0, exu_queue.rs1_addr};    // zimm
+        exu2csr_w_data = {(`SCR1_XLEN-$size(exu_queue.rs1_addr))'(0), exu_queue.rs1_addr};    // zimm
     end
 end
 
