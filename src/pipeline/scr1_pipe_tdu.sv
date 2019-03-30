@@ -95,17 +95,17 @@ logic                                           icount_write_en;
 
 always_comb begin
     csr_addr_tselect_cmb      = 1'b0;
-    csr_addr_tdata2_cmb       = 1'b0;
-    csr_addr_mcontrol_cmb     = 1'b0;
+    csr_addr_tdata2_cmb       = '0;
+    csr_addr_mcontrol_cmb     = '0;
 
 `ifdef SCR1_BRKM_BRKPT_ICOUNT_EN
     csr_addr_icount_cmb       = 1'b0;
 `endif // SCR1_BRKM_BRKPT_ICOUNT_EN
 
     csr_wr_cmb            = 1'b0;
-    csr_wr_data_cmb       = 1'b0;
+    csr_wr_data_cmb       = '0;
 
-    csr2tdu_rdata         = 1'b0;
+    csr2tdu_rdata         = '0;
     csr2tdu_resp          = SCR1_CSR_RESP_ER;
 
     if( csr2tdu_req ) begin
@@ -115,11 +115,11 @@ always_comb begin
         if( csr2tdu_addr == SCR1_CSR_ADDR_TDU_OFFS_TSELECT ) begin
             csr_addr_tselect_cmb = 1'b1;
             // Read data
-            csr2tdu_rdata        = tselect_ff;
+            csr2tdu_rdata        = { ($size(csr2tdu_rdata)-$size(tselect_ff))'(0), tselect_ff};
         end
         if( csr2tdu_addr == SCR1_CSR_ADDR_TDU_OFFS_TDATA2 ) begin
             for( int unsigned i = 0; i < MTRIG_NUM; ++i ) begin
-                if( tselect_ff == i ) begin
+                if( tselect_ff == i[$size(tselect_ff)-1:0] ) begin
                     csr_addr_tdata2_cmb[i] = 1'b1;
                     // Read data
                     csr2tdu_rdata          = tdata2[ i ];
@@ -128,7 +128,7 @@ always_comb begin
         end
         if( csr2tdu_addr == SCR1_CSR_ADDR_TDU_OFFS_TDATA1 ) begin
             for( int unsigned i = 0; i < MTRIG_NUM; ++i ) begin
-                if( tselect_ff == i ) begin
+                if( tselect_ff == i[$size(tselect_ff)-1:0] ) begin
                     csr_addr_mcontrol_cmb[ i ] = 1'b1;
                     // Read data
                     csr2tdu_rdata[ SCR1_TDU_TDATA1_TYPE_HI:
@@ -141,10 +141,10 @@ always_comb begin
                     csr2tdu_rdata[ SCR1_TDU_MCONTROL_SELECT ]     = SCR1_TDU_MCONTROL_SELECT_VAL;
                     csr2tdu_rdata[ SCR1_TDU_MCONTROL_TIMING ]     = SCR1_TDU_MCONTROL_TIMING_VAL;
                     csr2tdu_rdata[ SCR1_TDU_MCONTROL_ACTION_HI:
-                                   SCR1_TDU_MCONTROL_ACTION_LO ]  = mcontrol_action_ff[ i ];
+                                   SCR1_TDU_MCONTROL_ACTION_LO ]  = { (SCR1_TDU_MCONTROL_ACTION_HI-SCR1_TDU_MCONTROL_ACTION_LO)'(0), mcontrol_action_ff[ i ]};
                     csr2tdu_rdata[ SCR1_TDU_MCONTROL_CHAIN ]      = mcontrol_chain_ff[ i ];
                     csr2tdu_rdata[ SCR1_TDU_MCONTROL_MATCH_HI:
-                                   SCR1_TDU_MCONTROL_MATCH_LO ]   = mcontrol_match_ff[ i ];
+                                   SCR1_TDU_MCONTROL_MATCH_LO ]   = { (SCR1_TDU_MCONTROL_MATCH_HI-SCR1_TDU_MCONTROL_MATCH_LO-$size(mcontrol_match_ff)+1)'(0), mcontrol_match_ff[ i ]};
                     csr2tdu_rdata[ SCR1_TDU_MCONTROL_M ]          = mcontrol_m_ff[ i ];
                     csr2tdu_rdata[ SCR1_TDU_MCONTROL_RESERVEDA ]  = SCR1_TDU_MCONTROL_RESERVEDA_VAL;
                     csr2tdu_rdata[ SCR1_TDU_MCONTROL_S ]          = 1'b0;
@@ -155,7 +155,7 @@ always_comb begin
                 end
             end
 `ifdef SCR1_BRKM_BRKPT_ICOUNT_EN
-            if( tselect_ff == (SCR1_TDU_ALLTRIG_NUM - 1'b1) ) begin
+            if( tselect_ff == ($size(tselect_ff))'(SCR1_TDU_ALLTRIG_NUM-1) ) begin
                 csr_addr_icount_cmb = 1'b1;
                 // Read data
                 csr2tdu_rdata[ SCR1_TDU_TDATA1_TYPE_HI:
@@ -169,21 +169,21 @@ always_comb begin
                 csr2tdu_rdata[ SCR1_TDU_ICOUNT_S ]            = 1'b0;
                 csr2tdu_rdata[ SCR1_TDU_ICOUNT_M ]            = icount_m_ff;
                 csr2tdu_rdata[ SCR1_TDU_ICOUNT_ACTION_HI:
-                               SCR1_TDU_ICOUNT_ACTION_LO ]    = icount_action_ff;
+                               SCR1_TDU_ICOUNT_ACTION_LO ]    = { (SCR1_TDU_ICOUNT_ACTION_HI-SCR1_TDU_ICOUNT_ACTION_LO)'(0), icount_action_ff};
             end
 `endif // SCR1_BRKM_BRKPT_ICOUNT_EN
         end
         if( csr2tdu_addr == SCR1_CSR_ADDR_TDU_OFFS_TINFO ) begin
             for( int unsigned i = 0; i < MTRIG_NUM; ++i ) begin
-                if( tselect_ff == i ) begin
+                if( tselect_ff == i[$size(tselect_ff)-1:0] ) begin
                     // Read data
-                    csr2tdu_rdata[ SCR1_TDU_MCONTROL_TYPE_VAL ] = 1'b1;
+                    csr2tdu_rdata[ ($size(csr2tdu_rdata))'(SCR1_TDU_MCONTROL_TYPE_VAL) ] = 1'b1;
                 end
             end
 `ifdef SCR1_BRKM_BRKPT_ICOUNT_EN
-            if( tselect_ff == (SCR1_TDU_ALLTRIG_NUM - 1'b1) ) begin
+            if( tselect_ff == ($size(tselect_ff))'(SCR1_TDU_ALLTRIG_NUM - 1) ) begin
                 // Read data
-                csr2tdu_rdata[ SCR1_TDU_ICOUNT_TYPE_VAL ] = 1'b1;
+                csr2tdu_rdata[ ($size(csr2tdu_rdata))'(SCR1_TDU_ICOUNT_TYPE_VAL) ] = 1'b1;
             end
 `endif // SCR1_BRKM_BRKPT_ICOUNT_EN
         end
@@ -209,10 +209,10 @@ end
 
 always_ff @(negedge rst_n, posedge clk) begin
     if( ~rst_n ) begin
-        tselect_ff <= 1'b0;
+        tselect_ff <= '0;
     end else if( clk_en ) begin
         if( csr_addr_tselect_cmb & csr_wr_cmb ) begin
-            if( csr_wr_data_cmb[ALLTRIG_W-1:0] < ALLTRIG_NUM ) begin
+            if( csr_wr_data_cmb[ALLTRIG_W-1:0] < (ALLTRIG_W)'(ALLTRIG_NUM) ) begin
                 tselect_ff <= csr_wr_data_cmb[ALLTRIG_W-1:0];
             end
         end
@@ -230,8 +230,8 @@ always_comb begin
 
     if( ~dsbl ) begin
         if( icount_m_ff ) begin
-            icount_hit_cmb       = exu2tdu_i_mon.vd & (icount_count_ff == 1'b1) & ~icount_skip_ff;
-            icount_decrement_cmb = exu2tdu_i_mon.vd & (icount_count_ff != 1'b0);
+            icount_hit_cmb       = exu2tdu_i_mon.vd & (icount_count_ff == ($size(icount_count_ff))'(1)) & ~icount_skip_ff;
+            icount_decrement_cmb = exu2tdu_i_mon.vd & (icount_count_ff != ($size(icount_count_ff))'(0));
         end
     end
 end
@@ -253,14 +253,14 @@ always_ff @(negedge rst_n, posedge clk) begin
         icount_m_ff      <= 1'b0;
         icount_action_ff <= 1'b0;
         icount_hit_ff    <= 1'b0;
-        icount_count_ff  <= 1'b0;
+        icount_count_ff  <= '0;
         icount_skip_ff   <= 1'b0;
     end else if( clk_en ) begin
         if( clk_en_icount_cmb ) begin
             if( csr_addr_icount_cmb & csr_wr_cmb & icount_write_en ) begin
                 icount_dmode_ff <= csr_wr_data_cmb[SCR1_TDU_TDATA1_DMODE];
                 icount_m_ff <= csr_wr_data_cmb[ SCR1_TDU_ICOUNT_M ];
-                icount_action_ff <= csr_wr_data_cmb[SCR1_TDU_ICOUNT_ACTION_HI:SCR1_TDU_ICOUNT_ACTION_LO] == 1'b1;
+                icount_action_ff <= csr_wr_data_cmb[SCR1_TDU_ICOUNT_ACTION_HI:SCR1_TDU_ICOUNT_ACTION_LO] == (SCR1_TDU_ICOUNT_ACTION_HI-SCR1_TDU_ICOUNT_ACTION_LO+1)'(1);
             end
 
             if( csr_addr_icount_cmb & csr_wr_cmb & icount_write_en ) begin
@@ -367,7 +367,7 @@ always_ff @(negedge rst_n, posedge clk) begin
         mcontrol_execution_ff[gvar_trig] <= 1'b0;
         mcontrol_load_ff[gvar_trig]      <= 1'b0;
         mcontrol_store_ff[gvar_trig]     <= 1'b0;
-        mcontrol_match_ff[gvar_trig]     <= 1'b0;
+        mcontrol_match_ff[gvar_trig]     <= '0;
         mcontrol_action_ff[gvar_trig]    <= 1'b0;
         mcontrol_chain_ff[gvar_trig]     <= 1'b0;
         mcontrol_hit_ff[gvar_trig]       <= 1'b0;
@@ -385,18 +385,18 @@ always_ff @(negedge rst_n, posedge clk) begin
                 mcontrol_store_ff[gvar_trig]     <= csr_wr_data_cmb[SCR1_TDU_MCONTROL_STORE];
 
                 // Select action: dmode/exception
-                mcontrol_action_ff[gvar_trig]    <= csr_wr_data_cmb[SCR1_TDU_MCONTROL_ACTION_HI:SCR1_TDU_MCONTROL_ACTION_LO] == 1'b1;
+                mcontrol_action_ff[gvar_trig]    <= csr_wr_data_cmb[SCR1_TDU_MCONTROL_ACTION_HI:SCR1_TDU_MCONTROL_ACTION_LO] == (SCR1_TDU_MCONTROL_ACTION_HI-SCR1_TDU_MCONTROL_ACTION_LO+1)'(1);
 
                 // Select match type
                 if( csr_wr_data_cmb[SCR1_TDU_MCONTROL_EXECUTE] ) begin
-                    mcontrol_match_ff[gvar_trig] <= 1'b0;
+                    mcontrol_match_ff[gvar_trig] <= '0;
                 end else if( csr_wr_data_cmb[SCR1_TDU_MCONTROL_LOAD] |
                              csr_wr_data_cmb[SCR1_TDU_MCONTROL_STORE] ) begin
 
                     mcontrol_match_ff[gvar_trig] <= csr_wr_data_cmb[SCR1_TDU_MCONTROL_MATCH_HI:
-                                                                    SCR1_TDU_MCONTROL_MATCH_LO] == 2'd2 ? 2'd2 :
+                                                                    SCR1_TDU_MCONTROL_MATCH_LO] == (SCR1_TDU_MCONTROL_MATCH_HI-SCR1_TDU_MCONTROL_MATCH_LO+1)'(2) ? 2'd2 :
                                                     csr_wr_data_cmb[SCR1_TDU_MCONTROL_MATCH_HI:
-                                                                    SCR1_TDU_MCONTROL_MATCH_LO] == 2'd3 ? 2'd3 : 2'd0;
+                                                                    SCR1_TDU_MCONTROL_MATCH_LO] == (SCR1_TDU_MCONTROL_MATCH_HI-SCR1_TDU_MCONTROL_MATCH_LO+1)'(3) ? 2'd3 : 2'd0;
                 end
 
                 // Enable chain
@@ -433,7 +433,7 @@ end endgenerate // gblock_mtrig
 // Breakpoint
 always_comb begin
     // Invalidate matching instruction in writeback
-    tdu2exu_i_match = mcontrol_execution_hit_cmb;
+    tdu2exu_i_match = { ($size(tdu2exu_i_match)-$size(mcontrol_execution_hit_cmb))'(0), mcontrol_execution_hit_cmb};
 
     // Load/store goes to lsu in parallel with exception
     // request goes to epu because of that this signal

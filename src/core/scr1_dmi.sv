@@ -75,27 +75,27 @@ logic                                               clk_en_tap_dr_cmb;
 always_comb dtm_ch_tdo = tap_dr_ff[0];
 
 always_comb begin
-    tap_dr_rdata_cmb = 1'b0;
-    tap_dr_shift_cmb = 1'b0;
+    tap_dr_rdata_cmb = '0;
+    tap_dr_shift_cmb = '0;
 
-    if( dtm_ch_id == 1'd1 ) begin
-        tap_dr_rdata_cmb[ DTMCS_RESERVEDB_HI : DTMCS_RESERVEDB_LO ] = 1'b0;
+    if( dtm_ch_id == $size(dtm_ch_id)'(1) ) begin
+        tap_dr_rdata_cmb[ DTMCS_RESERVEDB_HI : DTMCS_RESERVEDB_LO ] = '0;
         tap_dr_rdata_cmb[ DTMCS_DMIHARDRESET ]                      = 1'b0;
         tap_dr_rdata_cmb[ DTMCS_DMIRESET ]                          = 1'b0;
         tap_dr_rdata_cmb[ DTMCS_RESERVEDA ]                         = 1'b0;
-        tap_dr_rdata_cmb[ DTMCS_IDLE_HI    : DTMCS_IDLE_LO ]        = 1'b0;
+        tap_dr_rdata_cmb[ DTMCS_IDLE_HI    : DTMCS_IDLE_LO ]        = '0;
         // Status of dmi operation is always success because of current DM implementation
-        tap_dr_rdata_cmb[ DTMCS_DMISTAT_HI : DTMCS_DMISTAT_LO ]     = 1'b0;
-        tap_dr_rdata_cmb[ DTMCS_ABITS_HI   : DTMCS_ABITS_LO ]       = SCR1_DBG_DMI_ADDR_WIDTH;
+        tap_dr_rdata_cmb[ DTMCS_DMISTAT_HI : DTMCS_DMISTAT_LO ]     = '0;
+        tap_dr_rdata_cmb[ DTMCS_ABITS_HI   : DTMCS_ABITS_LO ]       = (DTMCS_ABITS_HI-DTMCS_ABITS_LO+1)'(SCR1_DBG_DMI_ADDR_WIDTH);
         tap_dr_rdata_cmb[ DTMCS_VERSION_LO : DTMCS_VERSION_LO ]     = 1'b1;
 
-        tap_dr_shift_cmb =  { dtm_ch_tdi,
+        tap_dr_shift_cmb =  { 9'd0, dtm_ch_tdi,
                               tap_dr_ff[SCR1_DBG_DMI_DR_DTMCS_WIDTH-1:1] };
     end else begin
-        tap_dr_rdata_cmb[ DMI_ADDR_HI : DMI_ADDR_LO ] = 1'b0;
+        tap_dr_rdata_cmb[ DMI_ADDR_HI : DMI_ADDR_LO ] = '0;
         tap_dr_rdata_cmb[ DMI_DATA_HI : DMI_DATA_LO ] = dmi_rdata_ff;
         // Status of dmi operation is always success because of current DM implementation
-        tap_dr_rdata_cmb[ DMI_OP_HI   : DMI_OP_LO ]   = 1'b0;
+        tap_dr_rdata_cmb[ DMI_OP_HI   : DMI_OP_LO ]   = '0;
 
         tap_dr_shift_cmb =  { dtm_ch_tdi,
                               tap_dr_ff[SCR1_DBG_DMI_DR_DMI_ACCESS_WIDTH-1:1] };
@@ -129,8 +129,8 @@ end
 always_comb begin
     dmi_req           = 1'b0;
     dmi_wr            = 1'b0;
-    dmi_addr          = 1'b0;
-    dmi_wdata         = 1'b0;
+    dmi_addr          = '0;
+    dmi_wdata         = '0;
     
     if( dtm_ch_update & dtm_ch_sel  &  dtm_ch_id == 2'd2 ) begin
         dmi_req           = tap_dr_ff[ DMI_OP_HI   : DMI_OP_LO ] != 2'b00;

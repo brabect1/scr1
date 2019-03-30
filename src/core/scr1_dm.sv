@@ -122,17 +122,17 @@ logic [31:0]    progbuf3_ff;
 logic [31:0]    progbuf4_ff;
 logic [31:0]    progbuf5_ff;
 
-localparam      ABS_CMD_HARTREG         = 1'd0;
-localparam      ABS_CMD_HARTMEM         = 2'd2;
+localparam      ABS_CMD_HARTREG         = 8'd0;
+localparam      ABS_CMD_HARTMEM         = 8'd2;
 localparam      ABS_CMD_HARTREG_CSR     = 4'b0000;
 localparam      ABS_CMD_HARTREG_INTFPU  = 4'b0001;
 localparam      ABS_CMD_HARTREG_INT     = 7'b000_0000;
 localparam      ABS_CMD_HARTREG_FPU     = 7'b000_0001;
 localparam      ABS_EXEC_EBREAK         = 32'b000000000001_00000_000_00000_1110011;
 
-localparam      ABS_ERR_BUSY            = 1'd1,
-                ABS_ERR_CMD             = 2'd2,
-                ABS_ERR_EXCEPTION       = 2'd3,
+localparam      ABS_ERR_BUSY            = 3'd1,
+                ABS_ERR_CMD             = 3'd2,
+                ABS_ERR_EXCEPTION       = 3'd3,
                 ABS_ERR_NOHALT          = 3'd4;
 
 logic           dmi_req_dmcontrol_cmb;
@@ -270,16 +270,16 @@ end
 
 // Register data multiplexor
 always_comb begin
-    dmi_rdata = 1'b0;
+    dmi_rdata = '0;
 
     if( dmi_addr == SCR1_DBG_DMSTATUS ) begin
         dmi_rdata[SCR1_DBG_DMSTATUS_RESERVEDC_HI:
-                  SCR1_DBG_DMSTATUS_RESERVEDC_LO]       = DMSTATUS_RESERVEDC;
+                  SCR1_DBG_DMSTATUS_RESERVEDC_LO]       = (SCR1_DBG_DMSTATUS_RESERVEDC_HI-SCR1_DBG_DMSTATUS_RESERVEDC_LO+1)'(DMSTATUS_RESERVEDC);
 
         dmi_rdata[SCR1_DBG_DMSTATUS_IMPEBREAK]          = DMSTATUS_IMPEBREAK;
 
         dmi_rdata[SCR1_DBG_DMSTATUS_RESERVEDB_HI:
-                  SCR1_DBG_DMSTATUS_RESERVEDB_LO]       = DMSTATUS_RESERVEDB;
+                  SCR1_DBG_DMSTATUS_RESERVEDB_LO]       = (SCR1_DBG_DMSTATUS_RESERVEDB_HI-SCR1_DBG_DMSTATUS_RESERVEDB_LO+1)'(DMSTATUS_RESERVEDB);
 
         dmi_rdata[SCR1_DBG_DMSTATUS_ALLHAVERESET]       = dmstatus_allany_havereset_ff;
         dmi_rdata[SCR1_DBG_DMSTATUS_ANYHAVERESET]       = dmstatus_allany_havereset_ff;
@@ -299,7 +299,7 @@ always_comb begin
         dmi_rdata[SCR1_DBG_DMSTATUS_DEVTREEVALID]       = DMSTATUS_DEVTREEVALID;
 
         dmi_rdata[SCR1_DBG_DMSTATUS_VERSION_HI:
-                  SCR1_DBG_DMSTATUS_VERSION_LO]         = DMSTATUS_VERSION;;
+                  SCR1_DBG_DMSTATUS_VERSION_LO]         = (SCR1_DBG_DMSTATUS_VERSION_HI-SCR1_DBG_DMSTATUS_VERSION_LO+1)'(DMSTATUS_VERSION);
     end
     if( dmi_addr == SCR1_DBG_DMCONTROL ) begin
         dmi_rdata[SCR1_DBG_DMCONTROL_HALTREQ]           = dmcontrol_haltreq_ff;
@@ -310,26 +310,26 @@ always_comb begin
         dmi_rdata[SCR1_DBG_DMCONTROL_HASEL]             = DMCONTROL_HASEL;
 
         dmi_rdata[SCR1_DBG_DMCONTROL_HARTSELLO_HI:
-                  SCR1_DBG_DMCONTROL_HARTSELLO_LO]      = DMCONTROL_HARTSELLO;
+                  SCR1_DBG_DMCONTROL_HARTSELLO_LO]      = (SCR1_DBG_DMCONTROL_HARTSELLO_HI-SCR1_DBG_DMCONTROL_HARTSELLO_LO+1)'(DMCONTROL_HARTSELLO);
 
         dmi_rdata[SCR1_DBG_DMCONTROL_HARTSELHI_HI:
-                  SCR1_DBG_DMCONTROL_HARTSELHI_LO]      = DMCONTROL_HARTSELHI;
+                  SCR1_DBG_DMCONTROL_HARTSELHI_LO]      = (SCR1_DBG_DMCONTROL_HARTSELHI_HI-SCR1_DBG_DMCONTROL_HARTSELHI_LO+1)'(DMCONTROL_HARTSELHI);
 
         dmi_rdata[SCR1_DBG_DMCONTROL_RESERVEDA_HI:
-                  SCR1_DBG_DMCONTROL_RESERVEDA_LO]      = DMCONTROL_RESERVEDA;
+                  SCR1_DBG_DMCONTROL_RESERVEDA_LO]      = (SCR1_DBG_DMCONTROL_RESERVEDA_HI-SCR1_DBG_DMCONTROL_RESERVEDA_LO+1)'(DMCONTROL_RESERVEDA);
 
         dmi_rdata[SCR1_DBG_DMCONTROL_NDMRESET]          = dmcontrol_ndmreset_ff;
         dmi_rdata[SCR1_DBG_DMCONTROL_DMACTIVE]          = dmcontrol_dmactive_ff;
     end
     if( dmi_addr == SCR1_DBG_ABSTRACTCS ) begin
         dmi_rdata[SCR1_DBG_ABSTRACTCS_RESERVEDD_HI:
-                  SCR1_DBG_ABSTRACTCS_RESERVEDD_LO]     = ABSTRACTCS_RESERVEDD;
+                  SCR1_DBG_ABSTRACTCS_RESERVEDD_LO]     = (SCR1_DBG_ABSTRACTCS_RESERVEDD_HI-SCR1_DBG_ABSTRACTCS_RESERVEDD_LO+1)'(ABSTRACTCS_RESERVEDD);
 
         dmi_rdata[SCR1_DBG_ABSTRACTCS_PROGBUFSIZE_HI:
-                  SCR1_DBG_ABSTRACTCS_PROGBUFSIZE_LO]   = ABSTRACTCS_PROGBUFSIZE;
+                  SCR1_DBG_ABSTRACTCS_PROGBUFSIZE_LO]   = (SCR1_DBG_ABSTRACTCS_PROGBUFSIZE_HI-SCR1_DBG_ABSTRACTCS_PROGBUFSIZE_LO+1)'(ABSTRACTCS_PROGBUFSIZE);
 
         dmi_rdata[SCR1_DBG_ABSTRACTCS_RESERVEDC_HI:
-                  SCR1_DBG_ABSTRACTCS_RESERVEDC_LO]     = ABSTRACTCS_RESERVEDC;
+                  SCR1_DBG_ABSTRACTCS_RESERVEDC_LO]     = (SCR1_DBG_ABSTRACTCS_RESERVEDC_HI-SCR1_DBG_ABSTRACTCS_RESERVEDC_LO+1)'(ABSTRACTCS_RESERVEDC);
 
         dmi_rdata[SCR1_DBG_ABSTRACTCS_BUSY]             = abstractcs_busy;
         dmi_rdata[SCR1_DBG_ABSTRACTCS_RESERVEDB]        = ABSTRACTCS_RESERVEDB;
@@ -338,10 +338,10 @@ always_comb begin
                   SCR1_DBG_ABSTRACTCS_CMDERR_LO]        = abstractcs_cmderr_ff;
 
         dmi_rdata[SCR1_DBG_ABSTRACTCS_RESERVEDA_HI:
-                  SCR1_DBG_ABSTRACTCS_RESERVEDA_LO]     = ABSTRACTCS_RESERVEDA;
+                  SCR1_DBG_ABSTRACTCS_RESERVEDA_LO]     = (SCR1_DBG_ABSTRACTCS_RESERVEDA_HI-SCR1_DBG_ABSTRACTCS_RESERVEDA_LO+1)'(ABSTRACTCS_RESERVEDA);
 
         dmi_rdata[SCR1_DBG_ABSTRACTCS_DATACOUNT_HI:
-                  SCR1_DBG_ABSTRACTCS_DATACOUNT_LO]     = ABSTRACTCS_DATACOUNT;
+                  SCR1_DBG_ABSTRACTCS_DATACOUNT_LO]     = (SCR1_DBG_ABSTRACTCS_DATACOUNT_HI-SCR1_DBG_ABSTRACTCS_DATACOUNT_LO+1)'(ABSTRACTCS_DATACOUNT);
         end
     if( dmi_addr == SCR1_DBG_ABSTRACTAUTO ) begin
         dmi_rdata[0] = abstractauto_execdata0_ff;
@@ -373,21 +373,21 @@ always_comb begin
     end
     if( dmi_addr == SCR1_DBG_HARTINFO ) begin
         dmi_rdata[SCR1_DBG_HARTINFO_RESERVEDB_HI:
-                  SCR1_DBG_HARTINFO_RESERVEDB_LO]       = HARTINFO_RESERVEDB;
+                  SCR1_DBG_HARTINFO_RESERVEDB_LO]       = (SCR1_DBG_HARTINFO_RESERVEDB_HI-SCR1_DBG_HARTINFO_RESERVEDB_LO+1)'(HARTINFO_RESERVEDB);
 
         dmi_rdata[SCR1_DBG_HARTINFO_NSCRATCH_HI:
-                  SCR1_DBG_HARTINFO_NSCRATCH_LO]        = HARTINFO_NSCRATCH;
+                  SCR1_DBG_HARTINFO_NSCRATCH_LO]        = (SCR1_DBG_HARTINFO_NSCRATCH_HI-SCR1_DBG_HARTINFO_NSCRATCH_LO+1)'(HARTINFO_NSCRATCH);
 
         dmi_rdata[SCR1_DBG_HARTINFO_RESERVEDA_HI:
-                  SCR1_DBG_HARTINFO_RESERVEDA_LO]       = HARTINFO_RESERVEDA;
+                  SCR1_DBG_HARTINFO_RESERVEDA_LO]       = (SCR1_DBG_HARTINFO_RESERVEDA_HI-SCR1_DBG_HARTINFO_RESERVEDA_LO+1)'(HARTINFO_RESERVEDA);
 
         dmi_rdata[SCR1_DBG_HARTINFO_DATAACCESS]         = HARTINFO_DATAACCESS;
 
         dmi_rdata[SCR1_DBG_HARTINFO_DATASIZE_HI:
-                  SCR1_DBG_HARTINFO_DATASIZE_LO]        = HARTINFO_DATASIZE;
+                  SCR1_DBG_HARTINFO_DATASIZE_LO]        = (SCR1_DBG_HARTINFO_DATASIZE_HI-SCR1_DBG_HARTINFO_DATASIZE_LO+1)'(HARTINFO_DATASIZE);
 
         dmi_rdata[SCR1_DBG_HARTINFO_DATAADDR_HI:
-                  SCR1_DBG_HARTINFO_DATAADDR_LO]        = HARTINFO_DATAADDR;
+                  SCR1_DBG_HARTINFO_DATAADDR_LO]        = (SCR1_DBG_HARTINFO_DATAADDR_HI-SCR1_DBG_HARTINFO_DATAADDR_LO+1)'(HARTINFO_DATAADDR);
     end
     if( dmi_addr == SCR1_DBG_HALTSUM0 ) begin
         dmi_rdata[0] = dmstatus_allany_halted_ff;
@@ -592,7 +592,7 @@ always_comb begin
     end
 end
 
-assign abs_cmd_regsize_valid_cmb =  abs_cmd_regsize_cmb == 2'd2;
+assign abs_cmd_regsize_valid_cmb =  abs_cmd_regsize_cmb == 3'd2;
 assign abs_cmd_memsize_valid_cmb = (abs_cmd_memsize_cmb <  3'd3) ? 1'b1 : 1'b0;
 
 
@@ -996,7 +996,7 @@ always_comb begin
                               (~dmi_wdata[SCR1_DBG_ABSTRACTCS_CMDERR_HI:
                                           SCR1_DBG_ABSTRACTCS_CMDERR_LO]);
 
-            if( abs_cmderr_cmb == 1'b0 ) begin
+            if( abs_cmderr_cmb == '0 ) begin
                 abs_fsm_cmb = ABS_STATE_IDLE;
             end
         end
@@ -1017,9 +1017,9 @@ always_ff @(posedge clk) begin
         if( ~dmcontrol_dmactive_ff ) begin
             abs_exec_req_ff      <= 1'd0;
             abs_fsm_ff           <= ABS_STATE_IDLE;
-            abstractcs_cmderr_ff <= 1'd0;
+            abstractcs_cmderr_ff <= '0;
             abstractauto_execdata0_ff <= 1'b0;
-            command_ff           <= 1'b0;
+            command_ff           <= '0;
         end else begin
             abs_exec_req_ff      <= abs_exec_req_cmb;
             abs_fsm_ff           <= abs_fsm_cmb;
@@ -1179,13 +1179,13 @@ always_comb begin
     hart_pbuf_instr = ABS_EXEC_EBREAK;
 
     if( abs_fsm_ff == ABS_STATE_EXEC & ~hart_pbuf_ebreak_ff ) begin
-        if( hart_pbuf_addr == 1'd0 ) hart_pbuf_instr = progbuf0_ff;
-        if( hart_pbuf_addr == 1'd1 ) hart_pbuf_instr = progbuf1_ff;
-        if( hart_pbuf_addr == 2'd2 ) hart_pbuf_instr = progbuf2_ff;
-        if( hart_pbuf_addr == 2'd3 ) hart_pbuf_instr = progbuf3_ff;
-        if( hart_pbuf_addr == 3'd4 ) hart_pbuf_instr = progbuf4_ff;
-        if( hart_pbuf_addr == 3'd5 ) hart_pbuf_instr = progbuf5_ff;
-    end else if( hart_pbuf_addr == 1'b0 ) hart_pbuf_instr = abs_exec_instr_ff;
+        if( hart_pbuf_addr == SCR1_HDU_PBUF_ADDR_WIDTH'(0) ) hart_pbuf_instr = progbuf0_ff;
+        if( hart_pbuf_addr == SCR1_HDU_PBUF_ADDR_WIDTH'(1) ) hart_pbuf_instr = progbuf1_ff;
+        if( hart_pbuf_addr == SCR1_HDU_PBUF_ADDR_WIDTH'(2) ) hart_pbuf_instr = progbuf2_ff;
+        if( hart_pbuf_addr == SCR1_HDU_PBUF_ADDR_WIDTH'(3) ) hart_pbuf_instr = progbuf3_ff;
+        if( hart_pbuf_addr == SCR1_HDU_PBUF_ADDR_WIDTH'(4) ) hart_pbuf_instr = progbuf4_ff;
+        if( hart_pbuf_addr == SCR1_HDU_PBUF_ADDR_WIDTH'(5) ) hart_pbuf_instr = progbuf5_ff;
+    end else if( hart_pbuf_addr == '0 ) hart_pbuf_instr = abs_exec_instr_ff;
 end
 
 always_comb hart_pbuf_rcode    = 1'b0;

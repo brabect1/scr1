@@ -601,7 +601,7 @@ begin
             else begin
                 dm_pbuf_req         = 1'b1;
                 if (hart_pbuf_instr_vd & hart_pbuf_instr_rdy) begin
-                    if (pbuf_addr == (SCR1_HDU_PBUF_ADDR_SPAN-1)) begin
+                    if (pbuf_addr == ($size(pbuf_addr))'(SCR1_HDU_PBUF_ADDR_SPAN-1)) begin
                         pbuf_state_next = SCR1_HDU_PBUFSTATE_EXCINJECT;
                     end
                     else begin
@@ -651,7 +651,7 @@ begin : csr_if_regsel
     //csr_dscratch1_sel   = 1'b0;
 
     if (csr_req == 1'b1) begin
-        case (csr_addr)
+        case ({ (SCR1_CSR_ADDR_WIDTH-$size(csr_addr))'(0), csr_addr})
             SCR1_HDU_DBGCSR_OFFS_DCSR : begin
                 csr_dcsr_sel        = 1'b1;
             end
@@ -722,7 +722,7 @@ end : csr_if_write
 always_comb
 begin
     if (dbg_state == SCR1_HDU_DBGSTATE_DRUN) begin
-        case (csr_addr)
+        case ({ (SCR1_CSR_ADDR_WIDTH-$size(csr_addr))'(0), csr_addr})
                 SCR1_HDU_DBGCSR_OFFS_DSCRATCH0 : begin
                     csr_resp = csr_dscratch0_resp;
                 end
@@ -778,7 +778,7 @@ end
 always_ff @(negedge rst_n, posedge clk)
 begin
     if (rst_n == 1'b0) begin
-        csr_dcsr_cause <= 1'b0;
+        csr_dcsr_cause <= '0;
     end
     else if(clk_en) begin
         if(dfsm_csr_update) begin
