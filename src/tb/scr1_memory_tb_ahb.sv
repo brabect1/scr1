@@ -105,12 +105,12 @@ begin
         end
     end
     else begin
-        addr_mirage = addr;
+        addr_mirage = addr[$size(addr_mirage)-1:0];
         for (int i = 0; i < 4; ++i) begin
             tmp[ (i*8)+:8 ] = (r_be[i])
                                         ? (w_hazard[i])
                                             ? w_data[(i*8)+:8]
-                                            : mirage[addr_mirage+i]
+                                            : mirage[addr_mirage+i[$size(addr_mirage)-1:0]]
                                         : 'x;
         end
     end
@@ -131,8 +131,8 @@ begin
             if(~mirage_en)
                 memory[addr+i] <= data[(8*(i+1)-1)-:8];
             else begin
-                addr_mirage = addr;
-                mirage[addr_mirage+i] <= data[(8*(i+1)-1)-:8];
+                addr_mirage = addr[$size(addr_mirage)-1:0];
+                mirage[addr_mirage+i[$size(addr_mirage)-1:0]] <= data[(8*(i+1)-1)-:8];
             end
         end
     end
@@ -151,7 +151,7 @@ endfunction : scr1_check_err_addr
 
 function logic [3:0] scr1_be_form(
     input   logic [1:0]     offset,
-    input   logic [1:0]     hsize
+    input   logic [2:0]     hsize
 );
     logic [3:0]     tmp;
 begin
@@ -164,6 +164,9 @@ begin
         end
         SCR1_HSIZE_32B : begin
             tmp = 4'b1111;
+        end
+        default : begin
+            tmp = 4'b0000;
         end
     endcase
     return tmp;

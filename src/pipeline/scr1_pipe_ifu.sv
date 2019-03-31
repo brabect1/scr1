@@ -268,6 +268,9 @@ always_ff @(posedge clk, negedge rst_n) begin
                     q_data  [SCR1_IFU_QUEUE_ADR_W'(q_wptr + 1'b1)]  <= imem_rdata[31:16];
                     q_err   [SCR1_IFU_QUEUE_ADR_W'(q_wptr + 1'b1)]  <= imem_resp_er;
                 end
+                default: begin
+                    // makes the registers keep their value
+                end
             endcase // q_we
         end // write
     end

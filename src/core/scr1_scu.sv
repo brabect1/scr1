@@ -124,6 +124,7 @@ logic                                               sys_rst_n_status;
 //
 logic                                               dm_rst_n_sync;
 logic                                               dm_rst_n_status;
+logic                                               dm_rst_n_qlfy_i; // DM Reset Qualifier for TAP readback
 //
 logic                                               core_rst_n_sync;
 logic                                               core_rst_n_qlfy_sync;
@@ -131,6 +132,7 @@ logic                                               core_rst_n_status;
 //
 logic                                               hdu_rst_n_sync;
 logic                                               hdu_rst_n_status;
+logic                                               hdu_rst_n_qlfy_i; // HDU Reset Qualifier for TAP readback
 
 
 //======================================================================================================================
@@ -274,10 +276,14 @@ assign mode_reg_next    = cmd_data;
 assign mode_rsrv        = mode_reg.rsrv;
 
 // Status Register
+// (To avoid EDA tools detecting potential combo loop from cmd_data through
+// mode_reg_next, status_reg_data and reg_data, we use *_qlfy_i signals that
+// depend only on the flops of the Mode registers. The *_qlfy outputs use a
+// fast forward combinational path on write to the Mode register.)
 assign status_reg_data.sys_reset    = ~(sys_rst_n_status    & sys_rst_n_qlfy);
 assign status_reg_data.core_reset   = ~(core_rst_n_status   & core_rst_n_qlfy);
-assign status_reg_data.dm_reset     = ~(dm_rst_n_status     & dm_rst_n_qlfy);
-assign status_reg_data.hdu_reset    = ~(hdu_rst_n_status    & hdu_rst_n_qlfy);
+assign status_reg_data.dm_reset     = ~(dm_rst_n_status     & dm_rst_n_qlfy_i);
+assign status_reg_data.hdu_reset    = ~(hdu_rst_n_status    & hdu_rst_n_qlfy_i);
 
 always_ff @(posedge clk, negedge pwrup_rst_n_sync) begin
     if (~pwrup_rst_n_sync) begin
@@ -383,6 +389,7 @@ assign dm_rst_n_sync = mode_reg.dm_rst_mux ? sys_rst_n      : pwrup_rst_n_sync;
 assign dm_rst_n_qlfy = mode_reg_wr ?
                             (mode_reg_next.dm_rst_mux ? sys_rst_n_qlfy : 1'b1) :
                             (mode_reg.dm_rst_mux      ? sys_rst_n_qlfy : 1'b1) ;
+assign dm_rst_n_qlfy_i =    (mode_reg.dm_rst_mux      ? sys_rst_n_qlfy : 1'b1) ;
 
 // Core Reset: core_rst_n
 scr1_reset_buf_qlfy_cell i_core_rstn_buf_qlfy_cell (
@@ -414,6 +421,7 @@ assign hdu_rst_n_sync = mode_reg.hdu_rst_mux ? pwrup_rst_n_sync : core_rst_n;
 assign hdu_rst_n_qlfy = mode_reg_wr ?
                             (mode_reg_next.hdu_rst_mux ? 1'b1 : core_rst_n_qlfy) :
                             (mode_reg.hdu_rst_mux      ? 1'b1 : core_rst_n_qlfy) ;
+assign hdu_rst_n_qlfy_i =   (mode_reg.hdu_rst_mux      ? 1'b1 : core_rst_n_qlfy) ;
 
 endmodule : scr1_scu
 

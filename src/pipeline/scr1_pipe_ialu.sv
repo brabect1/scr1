@@ -173,6 +173,9 @@ always_comb begin
         SCR1_IALU_FSM_CORR : begin
             next_state = SCR1_IALU_FSM_IDLE;
         end
+        default: begin
+            // satisfied by the default assignments outside case
+        end
     endcase
 end
 
@@ -206,6 +209,9 @@ always_comb begin
                     sum1_sub    = 1'b1;
                     sum1_op1    = '0;
                     sum1_op2    = $signed(res32_2_reg);
+                end
+                default: begin
+                    // satisfied by the default assignments outside the outer most case
                 end
             endcase
         end
@@ -410,15 +416,41 @@ end
 // Operation result forming
 //-------------------------------------------------------------------------------
 always_comb begin
+    case (ialu_cmd)
+        SCR1_IALU_CMD_SLL,
+        SCR1_IALU_CMD_SRL,
+        SCR1_IALU_CMD_SRA:
+            shft_cmd    = {(ialu_cmd != SCR1_IALU_CMD_SLL), (ialu_cmd == SCR1_IALU_CMD_SRA)};
+        default:
+            shft_cmd    = 2'b0;
+    endcase
+end
+
+`ifdef SCR1_RVM_EXT
+assign mul_cmd   = {((ialu_cmd == SCR1_IALU_CMD_MULHU) | (ialu_cmd == SCR1_IALU_CMD_MULHSU)),
+                   ((ialu_cmd == SCR1_IALU_CMD_MULHU) | (ialu_cmd == SCR1_IALU_CMD_MULH))};
+assign div_cmd   = {((ialu_cmd == SCR1_IALU_CMD_REM)   | (ialu_cmd == SCR1_IALU_CMD_REMU)),
+                   ((ialu_cmd == SCR1_IALU_CMD_REMU)  | (ialu_cmd == SCR1_IALU_CMD_DIVU))};
+
+always_comb begin
+    case (ialu_cmd)
+        SCR1_IALU_CMD_MUL,
+        SCR1_IALU_CMD_MULHU,
+        SCR1_IALU_CMD_MULHSU,
+        SCR1_IALU_CMD_MULH : mdu_cmd     = SCR1_IALU_MDU_MUL;
+        SCR1_IALU_CMD_DIV,
+        SCR1_IALU_CMD_DIVU,
+        SCR1_IALU_CMD_REM,
+        SCR1_IALU_CMD_REMU : mdu_cmd     = SCR1_IALU_MDU_DIV;
+        default:             mdu_cmd     = SCR1_IALU_MDU_NONE;
+    endcase
+end
+`endif // SCR1_RVM_EXT
+
+always_comb begin
     ialu_res    = '0;
     ialu_cmp    = 1'b0;
-    shft_cmd    = 2'b0;
 `ifdef SCR1_RVM_EXT
-    mdu_cmd     = SCR1_IALU_MDU_NONE;
-    mul_cmd     = {((ialu_cmd == SCR1_IALU_CMD_MULHU) | (ialu_cmd == SCR1_IALU_CMD_MULHSU)),
-                   ((ialu_cmd == SCR1_IALU_CMD_MULHU) | (ialu_cmd == SCR1_IALU_CMD_MULH))};
-    div_cmd     = {((ialu_cmd == SCR1_IALU_CMD_REM)   | (ialu_cmd == SCR1_IALU_CMD_REMU)),
-                   ((ialu_cmd == SCR1_IALU_CMD_REMU)  | (ialu_cmd == SCR1_IALU_CMD_DIVU))};
     ialu_rdy    = 1'b1;
 `endif // SCR1_RVM_EXT
 
@@ -465,7 +497,6 @@ always_comb begin
         SCR1_IALU_CMD_SLL,
         SCR1_IALU_CMD_SRL,
         SCR1_IALU_CMD_SRA: begin
-            shft_cmd    = {(ialu_cmd != SCR1_IALU_CMD_SLL), (ialu_cmd == SCR1_IALU_CMD_SRA)};
             ialu_res    = shft_res;
         end
 `ifdef SCR1_RVM_EXT
@@ -473,7 +504,6 @@ always_comb begin
         SCR1_IALU_CMD_MULHU,
         SCR1_IALU_CMD_MULHSU,
         SCR1_IALU_CMD_MULH : begin
-            mdu_cmd     = SCR1_IALU_MDU_MUL;
  `ifdef SCR1_FAST_MUL
             ialu_res     = (|mul_cmd) ? mul_res[(32*2)-1:32] : mul_res[31:0];
  `else // ~SCR1_FAST_MUL
@@ -493,7 +523,6 @@ always_comb begin
         SCR1_IALU_CMD_DIVU,
         SCR1_IALU_CMD_REM,
         SCR1_IALU_CMD_REMU : begin
-            mdu_cmd     = SCR1_IALU_MDU_DIV;
             case (curr_state)
                 SCR1_IALU_FSM_IDLE : begin
                     ialu_res     = (|ialu_op2 | div_cmd[1]) ? ialu_op1 : '1;
@@ -506,6 +535,9 @@ always_comb begin
                 SCR1_IALU_FSM_CORR : begin
                     ialu_res     = (div_cmd[1]) ? sum2_res[31:0] : sum1_res[31:0];
                     ialu_rdy     = 1'b1;
+                end
+                default: begin
+                    // satisfied by the default assignments outside the outer most case
                 end
             endcase
         end

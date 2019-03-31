@@ -88,7 +88,7 @@ always_comb begin
         end
         SCR1_MEM_WIDTH_HWORD : begin
             dmem_writedata  = {(`SCR1_DMEM_DWIDTH / 16){dmem_wdata[15:0]}};
-            dmem_byteen     = 2'b11 << {dmem_addr[1], 1'b0};
+            dmem_byteen     = 4'b0011 << {dmem_addr[1], 1'b0};
         end
         default : begin
         end

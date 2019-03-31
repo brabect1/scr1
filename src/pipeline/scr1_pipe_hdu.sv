@@ -69,17 +69,17 @@ module scr1_pipe_hdu (
     output  logic                                           hart_exu_dmode_sstep_en,// Enable single-step
 
     // HART state
-    output  logic                                           hart_dbg_halted,        // Debug halted state
+    output  logic                                           hart_dbg_halted /*verilator isolate_assignments*/,        // Debug halted state
     output  logic                                           hart_dbg_run2halt,      // Transition to debug halted state
     output  logic                                           hart_dbg_halt2run,      // Transition to run state
-    output  logic                                           hart_dbg_run_start,     // First cycle of run state
+    output  logic                                           hart_dbg_run_start /*verilator isolate_assignments*/,     // First cycle of run state
     output logic                                            hart_cmd_rctl,
     input  logic [`SCR1_XLEN-1:0]                           hart_pc,                // Current PC
     output logic [`SCR1_XLEN-1:0]                           hart_new_pc,            // New PC for resume
     //
     input   logic                                           hart_pbuf_instr_rdy,    // Program Buffer Instruction i/f ready
-    output  logic                                           hart_pbuf_instr_vd,     // Program Buffer Instruction valid
-    output  logic                                           hart_pbuf_instr_err,    // Program Buffer Instruction i/f error
+    output  logic                                           hart_pbuf_instr_vd  /*verilator isolate_assignments*/,    // Program Buffer Instruction valid
+    output  logic                                           hart_pbuf_instr_err /*verilator isolate_assignments*/,    // Program Buffer Instruction i/f error
     output  logic [SCR1_HDU_CORE_INSTR_WIDTH-1:0]           hart_pbuf_instr         // Program Buffer Instruction itself
 );
 
@@ -107,7 +107,7 @@ logic                                               dfsm_update_next;
 logic                                               dfsm_event;
 logic                                               dfsm_event_next;
 logic                                               dfsm_csr_update;
-logic                                               dfsm_cmd_req;
+logic                                               dfsm_cmd_req /*verilator isolate_assignments*/;
 logic                                               dfsm_pbuf_start_fetch;
 
 logic                                               dfsm_rctl_wr;
@@ -600,7 +600,7 @@ begin
             end
             else begin
                 dm_pbuf_req         = 1'b1;
-                if (hart_pbuf_instr_vd & hart_pbuf_instr_rdy) begin
+                if (dm_pbuf_resp & hart_pbuf_instr_rdy) begin
                     if (pbuf_addr == ($size(pbuf_addr))'(SCR1_HDU_PBUF_ADDR_SPAN-1)) begin
                         pbuf_state_next = SCR1_HDU_PBUFSTATE_EXCINJECT;
                     end
@@ -620,7 +620,7 @@ begin
             end
             else begin
                 dm_pbuf_req         = 1'b1;
-                if (hart_pbuf_instr_vd & hart_pbuf_instr_rdy) begin
+                if (dm_pbuf_resp & hart_pbuf_instr_rdy) begin
                     pbuf_state_next = SCR1_HDU_PBUFSTATE_WAIT4END;
                 end
             end

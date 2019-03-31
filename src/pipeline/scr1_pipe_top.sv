@@ -207,7 +207,10 @@ logic [`SCR1_XLEN-1:0]                      csr2tdu_wdata_qlfy;    //     TDU wr
  `endif // SCR1_DBGC_EN
 
 // EXU/LSU <-> TDU
-type_scr1_brkm_instr_mon_s                  exu2tdu_i_mon;         // Instruction monitor
+//tbr type_scr1_brkm_instr_mon_s                  exu2tdu_i_mon;         // Instruction monitor
+logic                                       exu2tdu_i_mon_vd;       // Instruction stream monitoring
+logic                                       exu2tdu_i_mon_req;      // Instruction stream monitoring
+logic [`SCR1_XLEN-1:0]                      exu2tdu_i_mon_addr;     // Instruction stream monitoring
 type_scr1_brkm_lsu_mon_s                    lsu2tdu_d_mon;         // Data monitor
 logic [SCR1_TDU_ALLTRIG_NUM-1:0]            tdu2exu_i_match;       // Instruction breakpoint(s) match
 logic [SCR1_TDU_MTRIG_NUM-1:0]              tdu2lsu_d_match;       // Data breakpoint(s) match
@@ -218,7 +221,10 @@ logic [SCR1_TDU_ALLTRIG_NUM-1:0]            exu2tdu_bp_retire;     // Instructio
  `ifdef SCR1_DBGC_EN
                                                                     // Qualified TDU input signals from pipe_rst_n
                                                                     // reset domain:
-type_scr1_brkm_instr_mon_s                  exu2tdu_i_mon_qlfy;         // Instruction monitor
+//tbr type_scr1_brkm_instr_mon_s                  exu2tdu_i_mon_qlfy;         // Instruction monitor
+logic                                       exu2tdu_i_mon_qlfy_vd;       // Instruction stream monitoring
+logic                                       exu2tdu_i_mon_qlfy_req;      // Instruction stream monitoring
+logic [`SCR1_XLEN-1:0]                      exu2tdu_i_mon_qlfy_addr;     // Instruction stream monitoring
 type_scr1_brkm_lsu_mon_s                    lsu2tdu_d_mon_qlfy;         // Data monitor
 logic [SCR1_TDU_ALLTRIG_NUM-1:0]            exu2tdu_bp_retire_qlfy;     // Instruction with breakpoint flag retire
  `endif // SCR1_DBGC_EN
@@ -419,7 +425,10 @@ scr1_pipe_exu i_pipe_exu (
     .dbg_new_pc             (dbg_new_pc           ),
 `endif // SCR1_DBGC_EN
 `ifdef SCR1_BRKM_EN
-    .exu2tdu_i_mon          (exu2tdu_i_mon        ),
+//tbr    .exu2tdu_i_mon          (exu2tdu_i_mon        ),
+    .exu2tdu_i_mon_vd       (exu2tdu_i_mon_vd     ),
+    .exu2tdu_i_mon_req      (exu2tdu_i_mon_req    ),
+    .exu2tdu_i_mon_addr     (exu2tdu_i_mon_addr   ),
     .tdu2exu_i_match        (tdu2exu_i_match      ),
     .tdu2exu_i_x_req        (tdu2exu_i_x_req      ),
     .lsu2tdu_d_mon          (lsu2tdu_d_mon        ),
@@ -589,9 +598,15 @@ scr1_pipe_tdu i_pipe_tdu (
     .csr2tdu_resp           (tdu2csr_resp          ),
     // ID I/F
  `ifdef SCR1_DBGC_EN
-    .exu2tdu_i_mon          (exu2tdu_i_mon_qlfy    ),
+//tbr    .exu2tdu_i_mon          (exu2tdu_i_mon_qlfy    ),
+    .exu2tdu_i_mon_vd       (exu2tdu_i_mon_qlfy_vd  ),
+    .exu2tdu_i_mon_req      (exu2tdu_i_mon_qlfy_req ),
+    .exu2tdu_i_mon_addr     (exu2tdu_i_mon_qlfy_addr),
  `else // SCR1_DBGC_EN
-    .exu2tdu_i_mon          (exu2tdu_i_mon         ),
+//tbr    .exu2tdu_i_mon          (exu2tdu_i_mon         ),
+    .exu2tdu_i_mon_vd       (exu2tdu_i_mon_vd     ),
+    .exu2tdu_i_mon_req      (exu2tdu_i_mon_req    ),
+    .exu2tdu_i_mon_addr     (exu2tdu_i_mon_addr   ),
  `endif // SCR1_DBGC_EN
     // CFU I/F
     .tdu2exu_i_match        (tdu2exu_i_match       ),
@@ -624,7 +639,10 @@ assign csr2tdu_cmd_qlfy         = pipe_rst_n_qlfy   ? csr2tdu_cmd : SCR1_CSR_CMD
 assign csr2tdu_addr_qlfy        = csr2tdu_addr      & {$bits(csr2tdu_addr){pipe_rst_n_qlfy}};
 assign csr2tdu_wdata_qlfy       = csr2tdu_wdata     & {$bits(csr2tdu_wdata){pipe_rst_n_qlfy}};
 //
-assign exu2tdu_i_mon_qlfy       = pipe_rst_n_qlfy ? exu2tdu_i_mon : '0;
+//tbr assign exu2tdu_i_mon_qlfy       = pipe_rst_n_qlfy ? exu2tdu_i_mon : '0;
+assign exu2tdu_i_mon_qlfy_vd    = pipe_rst_n_qlfy ? exu2tdu_i_mon_vd   : '0;
+assign exu2tdu_i_mon_qlfy_req   = pipe_rst_n_qlfy ? exu2tdu_i_mon_req  : '0;
+assign exu2tdu_i_mon_qlfy_addr  = pipe_rst_n_qlfy ? exu2tdu_i_mon_addr : '0;
 assign lsu2tdu_d_mon_qlfy       = pipe_rst_n_qlfy ? lsu2tdu_d_mon : '0;
 assign exu2tdu_bp_retire_qlfy   = exu2tdu_bp_retire & {$bits(exu2tdu_bp_retire){pipe_rst_n_qlfy}};
  `endif // SCR1_DBGC_EN

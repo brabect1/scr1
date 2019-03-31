@@ -23,7 +23,10 @@ module scr1_pipe_tdu (
     output logic [SCR1_TDU_DATA_W-1:0]                      csr2tdu_rdata,      // CSR-TDU i/f read data
     output type_scr1_csr_resp_e                             csr2tdu_resp,       // CSR-TDU i/f response
     // ID I/F
-    input  type_scr1_brkm_instr_mon_s                       exu2tdu_i_mon,      // Instruction stream monitoring
+//tbr    input  type_scr1_brkm_instr_mon_s                       exu2tdu_i_mon,      // Instruction stream monitoring
+    input  logic                                            exu2tdu_i_mon_vd,       // Instruction stream monitoring
+    input  logic                                            exu2tdu_i_mon_req,      // Instruction stream monitoring
+    input  logic [`SCR1_XLEN-1:0]                           exu2tdu_i_mon_addr,     // Instruction stream monitoring
     // CFU I/F
     output logic [SCR1_TDU_ALLTRIG_NUM-1 : 0]               tdu2exu_i_match,    // Instruction BP match
     output logic                                            tdu2exu_i_x_req,    // Instruction BP exception request
@@ -230,8 +233,8 @@ always_comb begin
 
     if( ~dsbl ) begin
         if( icount_m_ff ) begin
-            icount_hit_cmb       = exu2tdu_i_mon.vd & (icount_count_ff == ($size(icount_count_ff))'(1)) & ~icount_skip_ff;
-            icount_decrement_cmb = exu2tdu_i_mon.vd & (icount_count_ff != ($size(icount_count_ff))'(0));
+            icount_hit_cmb       = exu2tdu_i_mon_vd & (icount_count_ff == ($size(icount_count_ff))'(1)) & ~icount_skip_ff;
+            icount_decrement_cmb = exu2tdu_i_mon_vd & (icount_count_ff != ($size(icount_count_ff))'(0));
         end
     end
 end
@@ -271,14 +274,14 @@ always_ff @(negedge rst_n, posedge clk) begin
 
             if( csr_addr_icount_cmb & csr_wr_cmb & icount_write_en ) begin
                 icount_count_ff <= csr_wr_data_cmb[SCR1_TDU_ICOUNT_COUNT_HI:SCR1_TDU_ICOUNT_COUNT_LO];
-            end else if( icount_decrement_cmb & exu2tdu_i_mon.req & ~icount_skip_ff ) begin
+            end else if( icount_decrement_cmb & exu2tdu_i_mon_req & ~icount_skip_ff ) begin
                 icount_count_ff <= icount_count_ff - 1'b1;
             end
 
              // skip scr write instruction to icount trigger
             if( csr_addr_icount_cmb & csr_wr_cmb ) begin
                 icount_skip_ff <= csr_wr_data_cmb[ SCR1_TDU_ICOUNT_M ];
-            end else if( icount_skip_ff & icount_decrement_cmb & exu2tdu_i_mon.req ) begin
+            end else if( icount_skip_ff & icount_decrement_cmb & exu2tdu_i_mon_req ) begin
                 icount_skip_ff <= 1'b0;
             end
         end
@@ -299,7 +302,7 @@ always_comb begin
         if( mcontrol_m_ff[gvar_trig] ) begin
             if(  mcontrol_execution_ff[gvar_trig] ) begin
 
-                mcontrol_execution_hit_cmb[gvar_trig] = exu2tdu_i_mon.vd & exu2tdu_i_mon.addr == tdata2[gvar_trig];
+                mcontrol_execution_hit_cmb[gvar_trig] = exu2tdu_i_mon_vd & exu2tdu_i_mon_addr == tdata2[gvar_trig];
             end
         end
     end
@@ -433,21 +436,35 @@ end endgenerate // gblock_mtrig
 // Breakpoint
 always_comb begin
     // Invalidate matching instruction in writeback
-    tdu2exu_i_match = { ($size(tdu2exu_i_match)-$size(mcontrol_execution_hit_cmb))'(0), mcontrol_execution_hit_cmb};
+    tdu2exu_i_match = { ($size(tdu2exu_i_match)-$size(mcontrol_execution_hit_cmb))'(0), mcontrol_execution_hit_cmb}
+`ifdef SCR1_BRKM_BRKPT_ICOUNT_EN
+    | { icount_hit_cmb, {SCR1_TDU_ALLTRIG_NUM-1{1'b0}} }
+`endif
+    ;
 
     // Load/store goes to lsu in parallel with exception
     // request goes to epu because of that this signal
     // invalidate load/store in lsu
-    tdu2lsu_i_x_req = |mcontrol_execution_hit_cmb;
+    tdu2lsu_i_x_req = |mcontrol_execution_hit_cmb
+`ifdef SCR1_BRKM_BRKPT_ICOUNT_EN
+    | icount_hit_cmb
+`endif
+    ;
 
     // Generate exception
-    tdu2exu_i_x_req = |mcontrol_execution_hit_cmb;
-
+    tdu2exu_i_x_req = |mcontrol_execution_hit_cmb
 `ifdef SCR1_BRKM_BRKPT_ICOUNT_EN
-    tdu2exu_i_match[SCR1_TDU_ALLTRIG_NUM-1] = icount_hit_cmb;
-    tdu2lsu_i_x_req = tdu2lsu_i_x_req | icount_hit_cmb;
-    tdu2exu_i_x_req = tdu2exu_i_x_req | icount_hit_cmb;
-`endif // SCR1_BRKM_BRKPT_ICOUNT_EN
+    | icount_hit_cmb
+`endif
+    ;
+
+//---->>>> Replaced by ifdef's above.
+//`ifdef SCR1_BRKM_BRKPT_ICOUNT_EN
+//    tdu2exu_i_match[SCR1_TDU_ALLTRIG_NUM-1] = icount_hit_cmb;
+//    tdu2lsu_i_x_req = tdu2lsu_i_x_req | icount_hit_cmb;
+//    tdu2exu_i_x_req = tdu2exu_i_x_req | icount_hit_cmb;
+//`endif // SCR1_BRKM_BRKPT_ICOUNT_EN
+//<<<<----
 end
 
 // Watchpoint
@@ -486,9 +503,9 @@ always_comb tdu2lsu_brk_en = (|mcontrol_m_ff) | icount_m_ff;
 SVA_TDU_X_CONTROL :
     assert property (
         @(negedge clk) disable iff (~rst_n)
-        !$isunknown( {rst_n,clk,clk_en,dsbl,csr2tdu_req,exu2tdu_i_mon.vd,tdu2lsu_d_mon.vd,exu2tdu_bp_retire} )
+        !$isunknown( {rst_n,clk,clk_en,dsbl,csr2tdu_req,exu2tdu_i_mon_vd,tdu2lsu_d_mon.vd,exu2tdu_bp_retire} )
     )
-    else $error("TDU Error: control signals is X - %0b",{rst_n,clk,clk_en,dsbl,csr2tdu_req,exu2tdu_i_mon.vd,tdu2lsu_d_mon.vd,exu2tdu_bp_retire});
+    else $error("TDU Error: control signals is X - %0b",{rst_n,clk,clk_en,dsbl,csr2tdu_req,exu2tdu_i_mon_vd,tdu2lsu_d_mon.vd,exu2tdu_bp_retire});
 
 SVA_TDU_X_CSR :
     assert property (
@@ -507,7 +524,7 @@ SVA_TDU_XW_CSR :
 SVA_TDU_X_IMON :
     assert property (
         @(negedge clk) disable iff (~rst_n)
-        exu2tdu_i_mon.vd |-> !$isunknown( {exu2tdu_i_mon.req,exu2tdu_i_mon.addr} )
+        exu2tdu_i_mon_vd |-> !$isunknown( {exu2tdu_i_mon_req,exu2tdu_i_mon_addr} )
     )
     else $error("TDU Error: imonitor is X");
 
