@@ -94,12 +94,29 @@ TARGETS += dhrystone21
 endif
 
 export TARGETS
-
+export RISCV_TESTS ?= $(tmp_dir)/riscv-tests
+export RISCV_COMPLIANCE_TESTS ?= $(tmp_dir)/riscv-compliance
 
 # Targets
 .PHONY: tests run_modelsim run_vcs run_ncsim run_verilator
 
 default: run_verilator
+
+.PHONY: populate-riscv_compliance
+populate-riscv_compliance:
+	mkdir -p $(tmp_dir) && \
+        cd $(tmp_dir) && \
+        git clone https://github.com/riscv/riscv-compliance && \
+        cd riscv-compliance && \
+        git checkout 9f280717f26f50833357db9bfb77a8c79835f162
+
+.PHONY: populate-riscv_isa
+populate-riscv_isa:
+	mkdir -p $(tmp_dir) && \
+        cd $(tmp_dir) && \
+        git clone https://github.com/riscv/riscv-tests && \
+        cd riscv-tests && \
+        git checkout a9433c4daa287fbe101025f2a079261a10149225
 
 .PHONY: populate-coremark
 populate-coremark:

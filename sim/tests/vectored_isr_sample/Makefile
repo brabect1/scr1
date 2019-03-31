@@ -29,10 +29,10 @@ $(bld_dir)/v_isr_sample.elf: $(ld_script) $(asm_objs)
 	$(RISCV_GCC) -o $@ -T $^ $(LDFLAGS)
 
 $(bld_dir)/v_isr_sample.hex: $(bld_dir)/v_isr_sample.elf
-	$(RISCV_OBJCOPY) $^ $@
+	$(RISCV_OBJCOPY) -O verilog $^ $@
 
 $(bld_dir)/v_isr_sample.dump: $(bld_dir)/v_isr_sample.elf
-	$(RISCV_OBJDUMP) $^ > $@
+	$(RISCV_OBJDUMP) -d $^ > $@
 
 clean:
 	$(RM)$(asm_objs) $(bld_dir)/v_isr_sample.elf $(bld_dir)/v_isr_sample.hex $(bld_dir)/v_isr_sample.dump

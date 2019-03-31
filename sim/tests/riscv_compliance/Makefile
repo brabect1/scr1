@@ -66,7 +66,7 @@ $(dst_dir)/compliance_%.elf: $(obj_dir)/%.o | $(dep_files)
 	$(RISCV_GCC) $^ $(bld_dir)/ref_obj/$*.o $(LDFLAGS) -o $@ -g
 
 $(dst_dir)/compliance_%.hex: $(dst_dir)/compliance_%.elf
-	$(RISCV_OBJCOPY) $^ $@
+	$(RISCV_OBJCOPY) -O verilog $^ $@
 
 $(bld_dir)/compliance_%.dump: $(dst_dir)/compliance_%.elf
 	$(RISCV_OBJDUMP) -D -w -x -S $^ > $@
